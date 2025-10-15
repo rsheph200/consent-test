@@ -6,17 +6,17 @@ import * as twgl from "twgl.js"
 export default function GradientEffect() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  let animationFrameId: number
-  let gl: WebGLRenderingContext | null = null
-  let programInfo: any = null
-  let bufferInfo: any = null
+  const animationFrameIdRef = useRef<number>()
+  const glRef = useRef<WebGLRenderingContext | null>(null)
+  const programInfoRef = useRef<twgl.ProgramInfo | null>(null)
+  const bufferInfoRef = useRef<twgl.BufferInfo | null>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    gl = canvas.getContext("webgl2", { alpha: true }) || canvas.getContext("webgl", { alpha: true })
-    if (!gl) {
+    glRef.current = canvas.getContext("webgl2", { alpha: true }) || canvas.getContext("webgl", { alpha: true })
+    if (!glRef.current) {
       console.error("WebGL not supported")
       return
     }
@@ -73,7 +73,7 @@ export default function GradientEffect() {
       }
     `
 
-    programInfo = twgl.createProgramInfo(gl, [vertexShader, fragmentShader])
+    programInfoRef.current = twgl.createProgramInfo(glRef.current, [vertexShader, fragmentShader])
 
     const arrays = {
       position: {
@@ -81,43 +81,45 @@ export default function GradientEffect() {
         data: [-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1],
       },
     }
-    bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays)
+    bufferInfoRef.current = twgl.createBufferInfoFromArrays(glRef.current, arrays)
 
     const resize = () => {
       twgl.resizeCanvasToDisplaySize(canvas)
-      if (gl) {
-        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+      if (glRef.current) {
+        glRef.current.viewport(0, 0, glRef.current.canvas.width, glRef.current.canvas.height)
       }
     }
     resize()
     window.addEventListener("resize", resize)
 
     const render = (time: number) => {
-      if (!gl || !programInfo || !bufferInfo) return
+      if (!glRef.current || !programInfoRef.current || !bufferInfoRef.current) return
 
       time *= 0.001
 
-      gl.clearColor(1, 1, 1, 1)
-      gl.clear(gl.COLOR_BUFFER_BIT)
+      glRef.current.clearColor(1, 1, 1, 1)
+      glRef.current.clear(glRef.current.COLOR_BUFFER_BIT)
 
       // biome-ignore lint/correctness/useHookAtTopLevel: gl.useProgram is WebGL API, not a React hook
-      gl.useProgram(programInfo.program)
-      twgl.setUniforms(programInfo, {
-        u_resolution: [gl.canvas.width, gl.canvas.height],
+      glRef.current.useProgram(programInfoRef.current.program)
+      twgl.setUniforms(programInfoRef.current, {
+        u_resolution: [glRef.current.canvas.width, glRef.current.canvas.height],
         u_time: time,
       })
 
-      twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo)
-      twgl.drawBufferInfo(gl, bufferInfo)
+      twgl.setBuffersAndAttributes(glRef.current, programInfoRef.current, bufferInfoRef.current)
+      twgl.drawBufferInfo(glRef.current, bufferInfoRef.current)
 
-      animationFrameId = requestAnimationFrame(render)
+      animationFrameIdRef.current = requestAnimationFrame(render)
     }
 
-    animationFrameId = requestAnimationFrame(render)
+    animationFrameIdRef.current = requestAnimationFrame(render)
 
     return () => {
       window.removeEventListener("resize", resize)
-      cancelAnimationFrame(animationFrameId)
+      if (animationFrameIdRef.current) {
+        cancelAnimationFrame(animationFrameIdRef.current)
+      }
     }
   }, [])
 

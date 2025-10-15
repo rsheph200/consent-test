@@ -1,12 +1,13 @@
 import Image from "next/image"
+import GradientEffect from "@/components/GradientEffect"
 
 export default function CirclePulsePage() {
   return (
     <div className="w-full h-screen bg-neutral-50 relative overflow-hidden">
       {/* Fixed gradient background at bottom */}
-      {/* <div className="fixed bottom-0 left-0 w-full h-1/4 z-0 mb-20 opacity-50">
+      <div className="fixed bottom-0 left-0 w-full h-1/4 z-0 mb-20 opacity-50">
         <GradientEffect />
-      </div> */}
+      </div>
       
       {/* Modal content positioned above gradient */}
       <div className="relative z-10 flex flex-col items-center justify-between h-full p-3">
